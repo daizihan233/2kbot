@@ -81,7 +81,7 @@ namespace Mirai.Net_2kBot.Modules
                             }
                         }
                     }
-                    else
+                    else if (receiver.MessageChain.GetPlainMessage() == "/help")
                     {
                         try
                         {
