@@ -284,44 +284,48 @@ namespace Mirai.Net_2kBot
                     }
                     else if (text.Length == 2)
                     {
-                        if (ja.Count == 4)
+                        try
                         {
-                            string target = ja[2]["target"].ToString();
-                            string t = ja[3]["text"].ToString().Replace(" ", "");
-                            int time = t.ToInt32();
-                            try
+                            if (ja.Count == 4)
                             {
-                                if (time >= 1)
+                                string target = ja[2]["target"].ToString();
+                                string t = ja[3]["text"].ToString().Replace(" ", "");
+                                int time = t.ToInt32();
+                                try
                                 {
-                                    Call.Execute(target, x.GroupId, time);
+                                    if (time >= 1)
+                                    {
+                                        Call.Execute(target, x.GroupId, time);
+                                    }
+                                    else if (time < 1)
+                                    {
+                                        try
+                                        {
+                                            await MessageManager.SendGroupMessageAsync(x.GroupId, "nmd，这个数字是几个意思？");
+                                        }
+                                        catch { }
+                                    }
                                 }
-                                else if (time < 1)
+                                catch
                                 {
                                     try
                                     {
-                                        await MessageManager.SendGroupMessageAsync(x.GroupId, "nmd，这个数字是几个意思？");
+                                        await MessageManager.SendGroupMessageAsync(x.GroupId, "油饼食不食？");
                                     }
                                     catch { }
                                 }
                             }
-                            catch
+                            else if (ja.Count == 3)
                             {
-                                try
-                                {
-                                    await MessageManager.SendGroupMessageAsync(x.GroupId, "油饼食不食？");
-                                }
-                                catch { }
+                                string target = ja[2]["target"].ToString();
+                                Call.Execute(target, x.GroupId, 3);
+                            }
+                            else
+                            {
+                                Call.Execute(text[1], x.GroupId, 3);
                             }
                         }
-                        else if (ja.Count == 3)
-                        {
-                            string target = ja[2]["target"].ToString();
-                            Call.Execute(target, x.GroupId, 3);
-                        }
-                        else
-                        {
-                            Call.Execute(text[1], x.GroupId, 3);
-                        }
+                        catch { }
                     }
                     else if (text.Length < 2)
                     {
@@ -581,7 +585,7 @@ namespace Mirai.Net_2kBot
                     try
                     {
                         await MessageManager.SendGroupMessageAsync(x.GroupId,
-                        "机器人版本：b1.0.0\r\n上次更新日期：2022/6/28\r\n更新内容：恭喜机器人进入beta阶段！此次没有重大更新，但机器人代码实现了模块化，方便后期维护");
+                        "机器人版本：b1.0.1\r\n上次更新日期：2022/6/28\r\n更新内容：紧急修复了由叫人功能引发的崩溃bug，并对/help指令进行了小修复");
                     }
                     catch { }
                 }
