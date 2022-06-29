@@ -286,6 +286,7 @@ namespace Mirai.Net_2kBot
                     {
                         try
                         {
+                            Console.WriteLine(ja.Count);
                             if (ja.Count == 4)
                             {
                                 string target = ja[2]["target"].ToString();
@@ -293,6 +294,8 @@ namespace Mirai.Net_2kBot
                                 int time = t.ToInt32();
                                 try
                                 {
+                                    Console.WriteLine(time);
+                                    Console.WriteLine(target);
                                     if (time >= 1)
                                     {
                                         Call.Execute(target, x.GroupId, time);
@@ -585,7 +588,7 @@ namespace Mirai.Net_2kBot
                     try
                     {
                         await MessageManager.SendGroupMessageAsync(x.GroupId,
-                        "机器人版本：b1.0.1\r\n上次更新日期：2022/6/28\r\n更新内容：紧急修复了由叫人功能引发的崩溃bug，并对/help指令进行了小修复");
+                        "机器人版本：b1.0.2\r\n上次更新日期：2022/6/28\r\n更新内容：紧急修复了各个模块的小bug");
                     }
                     catch { }
                 }
