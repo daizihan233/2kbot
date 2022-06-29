@@ -84,7 +84,10 @@ namespace Mirai.Net_2kBot.Modules
                             {
                                 await receiver.SendMessageAsync(receiver.MessageChain.GetPlainMessage());
                             }
-                            catch { }
+                            catch
+                            {
+                                break;
+                            }
                         }
                     }
                 }

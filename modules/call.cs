@@ -8,7 +8,7 @@ namespace Mirai.Net_2kBot.Modules
         //叫人功能
         public static async void Execute(string victim, string group, int times)
         {
-            if (times > 10)
+            if (times >= 10)
             {
                 times = 10;
             }
@@ -26,7 +26,10 @@ namespace Mirai.Net_2kBot.Modules
                         await MessageManager.SendGroupMessageAsync(group, messageChain);
                         global.last_call = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                     }
-                    catch { }
+                    catch
+                    {
+                        break;
+                    }
                 }
             }
             else
