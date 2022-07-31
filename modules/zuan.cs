@@ -2,7 +2,7 @@
 using Mirai.Net.Data.Messages.Receivers;
 using Mirai.Net.Utils.Scaffolds;
 
-namespace Net_2kBot.modules
+namespace Net_2kBot.Modules
 {
     public static class Zuan
     {
@@ -56,7 +56,7 @@ namespace Net_2kBot.modules
                         }
                         catch
                         {
-                            Console.WriteLine("祖安失败（恼");
+                            Console.WriteLine("祖安失败（恼）");
                         }
                     }
                 }

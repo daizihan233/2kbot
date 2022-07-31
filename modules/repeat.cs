@@ -2,7 +2,7 @@
 using Mirai.Net.Data.Messages.Receivers;
 using Mirai.Net.Utils.Scaffolds;
 
-namespace Net_2kBot.modules
+namespace Net_2kBot.Modules
 {
     public static class Repeat
     {
@@ -35,7 +35,7 @@ namespace Net_2kBot.modules
                         try
                         {
                             string results = "";
-                            if (Global.Ignores.Contains(receiver.Sender.Id) == false)
+                            if (global.ignores.Contains(receiver.Sender.Id) == false)
                             {
                                 for (int i = 1; i < result.Length; i++)
                                 {
@@ -66,7 +66,7 @@ namespace Net_2kBot.modules
                             }
                             catch
                             {
-                                Console.WriteLine("群消息发送失败：油饼食不食？");
+                                Console.WriteLine("群消息发送失败");
                             }
                         }
                     }
@@ -76,11 +76,14 @@ namespace Net_2kBot.modules
                         {
                             await receiver.SendMessageAsync("你个sb难道没发觉到少了些什么？");
                         }
-                        catch {Console.WriteLine("群消息发送失败：你个sb难道没发觉到少了些什么？"); }
+                        catch
+                        {
+                            Console.WriteLine("群消息发送失败");
+                        }
                     }
                 }
                 // 主动复读
-                else if (Global.Ignores.Contains(receiver.Sender.Id) == false)
+                else if (global.ignores.Contains(receiver.Sender.Id) == false)
                 {
                     foreach (string item in repeatwords)
                     {

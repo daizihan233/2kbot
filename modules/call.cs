@@ -1,31 +1,30 @@
-﻿using Mirai.Net.Data.Messages;
-using Mirai.Net.Sessions.Http.Managers;
+﻿using Mirai.Net.Sessions.Http.Managers;
 using Mirai.Net.Utils.Scaffolds;
 
-namespace Net_2kBot.modules
+namespace Net_2kBot.Modules
 {
     public class Call
     {
-        //叫人功能
+        // 叫人功能
         public static async void Execute(string victim, string group, int times)
         {
             if (times >= 10)
             {
                 times = 10;
             }
-            MessageChain? messageChain = new MessageChainBuilder()
+            var messageChain = new MessageChainBuilder()
                                .At(victim)
                                .Plain(" 机器人正在呼叫你")
                                .Build();
-            Global.TimeNow = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-            if (Global.TimeNow - Global.LastCall >= Global.Cd)
+            global.time_now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            if (global.time_now - global.last_call >= global.cd)
             {
                 for (int i = 0; i < times; i++)
                 {
                     try
                     {
                         await MessageManager.SendGroupMessageAsync(group, messageChain);
-                        Global.LastCall = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                        global.last_call = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                     }
                     catch
                     {
@@ -35,14 +34,14 @@ namespace Net_2kBot.modules
             }
             else
             {
-                Global.TimeNow = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                global.time_now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                 try
                 {
-                    await MessageManager.SendGroupMessageAsync(group, "CD未到，请别急！CD还剩： " + (Global.Cd - (Global.TimeNow - Global.LastCall)).ToString() + " 秒");
+                    await MessageManager.SendGroupMessageAsync(group, "CD未到，请别急！CD还剩： " + (global.cd - (global.time_now - global.last_call)).ToString() + " 秒");
                 }
                 catch
                 {
-                    Console.WriteLine("群消息发送失败：CD未到，请别急！CD还剩：" + (Global.Cd - (Global.TimeNow - Global.LastCall)).ToString() + " 秒");
+                    Console.WriteLine("群消息发送失败");
                 }
             }
         }
