@@ -160,11 +160,6 @@ namespace Net_2kBot.Modules
                         try
                         {
                             await GroupManager.KickAsync(victim, group);
-                            RestClient client = new("http://101.42.94.97/blacklist");
-                            RestRequest request = new("up?uid=" + victim + "&key=" + global.api_key, Method.Post);
-                            request.Timeout = 10000;
-                            RestResponse response = await client.ExecuteAsync(request);
-                            Console.WriteLine(response.Content);
                         }
                         catch
                         {
@@ -178,15 +173,10 @@ namespace Net_2kBot.Modules
                                 {
                                     Console.WriteLine("在尝试将黑名单对象踢出时执行失败！正在调用api...");
                                 }
-                                RestClient client = new("http://101.42.94.97/blacklist");
-                                RestRequest request = new("up?uid=" + victim + "&key=" + global.api_key, Method.Post);
+                                RestClient client = new("http://101.42.94.97/guser");
+                                RestRequest request = new("del?key=" + global.api_key + "&uid=" + victim + "&gid=" + group, Method.Post);
                                 request.Timeout = 10000;
                                 RestResponse response = await client.ExecuteAsync(request);
-                                Console.WriteLine(response.Content);
-                                RestClient client1 = new("http://101.42.94.97/guser");
-                                RestRequest request1 = new("del?key=" + global.api_key + "&uid=" + victim + "&gid=" + group, Method.Post);
-                                request.Timeout = 10000;
-                                RestResponse response1 = await client.ExecuteAsync(request);
                                 Console.WriteLine(response.Content);
                             }
                             catch
@@ -278,11 +268,6 @@ namespace Net_2kBot.Modules
                     var blocklist_new = global.blocklist.Where(line => !line.Contains(victim));
                     File.WriteAllLines("blocklist.txt", blocklist_new);
                     await MessageManager.SendGroupMessageAsync(group, "已将 " + victim + " 移出黑名单");
-                    var client = new RestClient("http://101.42.94.97/blacklist");
-                    var request = new RestRequest("del?uid=" + victim + "&key=" + global.api_key, Method.Delete);
-                    request.Timeout = 10000;
-                    RestResponse response = client.Execute(request);
-                    Console.WriteLine(response.Content);
                 }
                 else
                 {
