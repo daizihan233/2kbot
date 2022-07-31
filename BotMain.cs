@@ -8,7 +8,7 @@ using Mirai.Net.Data.Shared;
 using Mirai.Net.Sessions;
 using Mirai.Net.Sessions.Http.Managers;
 using Mirai.Net.Utils.Scaffolds;
-using Net_2kBot.modules;
+using Net_2kBot.Modules;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Reactive.Linq;
@@ -22,8 +22,8 @@ namespace Net_2kBot
             MiraiBot bot = new()
             {
                 Address = "localhost:8080",
-                QQ = Global.Qq,
-                VerifyKey = Global.VerifyKey
+                QQ = global.qq,
+                VerifyKey = global.verify_key
             };
             // 注意: `LaunchAsync`是一个异步方法，请确保`Main`方法的返回值为`Task`
             await bot.LaunchAsync();
@@ -38,8 +38,8 @@ namespace Net_2kBot
             .OfType<GroupMessageReceiver>()
             .Subscribe(_ =>
             {
-                Global.Ops = System.IO.File.ReadAllLines("ops.txt");
-                Global.Blocklist = System.IO.File.ReadAllLines("blocklist.txt");
+                global.ops = System.IO.File.ReadAllLines("ops.txt");
+                global.blocklist = System.IO.File.ReadAllLines("blocklist.txt");
                 Thread.Sleep(500);
             });
             // 戳一戳效果
@@ -104,9 +104,9 @@ namespace Net_2kBot
            .OfType<GroupMessageRecalledEvent>()
            .Subscribe(async receiver =>
            {
-               MessageChain? messageChain = new MessageChainBuilder()
+               var messageChain = new MessageChainBuilder()
                 .At(receiver.Operator.Id)
-                .Plain("你又撤回了什么见不得人的东西？")
+                .Plain(" 你又撤回了什么见不得人的东西？")
                 .Build();
                if (receiver.AuthorId != receiver.Operator.Id)
                {
@@ -118,7 +118,7 @@ namespace Net_2kBot
                        }
                        catch
                        {
-                           Console.WriteLine("消息发送失败");
+                           Console.WriteLine("群消息发送失败");
                        }
                    }
                }
@@ -162,7 +162,7 @@ namespace Net_2kBot
                     Console.WriteLine("群消息发送失败");
                 }
             });
-            // 侦测入群
+            //侦测入群
             bot.EventReceived
             .OfType<MemberJoinedEvent>()
             .Subscribe(async receiver =>
@@ -179,7 +179,7 @@ namespace Net_2kBot
                 {
                     Console.WriteLine("群消息发送失败");
                 }
-                if (Global.Blocklist != null && Global.Blocklist.Contains(receiver.Member.Group.Id))
+                if (global.blocklist != null && global.blocklist.Contains(receiver.Member.Group.Id))
                 {
                     try
                     {
@@ -217,7 +217,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage() == "/surprise")
                 {
                     MessageChain? chain = new MessageChainBuilder()
-                         .VoiceFromPath(Global.Path + "/ysxb.slk")
+                         .VoiceFromPath(global.path + "/ysxb.slk")
                          .Build();
                     try
                     {
@@ -237,11 +237,11 @@ namespace Net_2kBot
                     int choice = r.Next(chance);
                     if (choice == chance - 1)
                     {
-                        url = "https:// www.dmoe.cc/random.php";
+                        url = "https://www.dmoe.cc/random.php";
                     }
                     else
                     {
-                        url = "https:// source.unsplash.com/random";
+                        url = "https://source.unsplash.com/random";
                     }
                     MessageChain? chain = new MessageChainBuilder()
                          .ImageFromUrl(url)
@@ -273,7 +273,7 @@ namespace Net_2kBot
                 // 菜单与帮助
                 Help.Execute(x);
                 // 遗言
-                if (x.MessageChain.GetPlainMessage() == "遗言")
+                if (x.MessageChain.GetPlainMessage() == "遗言" || x.MessageChain.GetPlainMessage() == "留言")
                 {
                     await MessageManager.SendGroupMessageAsync(x.GroupId,
                         "对我而言，我曾一直觉得Setup群是个适合我的地方，我的直觉也的确没有错，Setup群确实是个好地方，我在里面学到了不少东西，并且跟群友相谈甚欢。但是，因为群里包括群主在内的不少人和我一样，都饱受抑郁症或者精神心理疾病的困扰，以至于我在面对他们慢慢开始伤害自己的时候，或者说甚至打算终结自己的时候，却显得格外无能。我的一句“赶紧去看医生吧”，此刻显得苍白无力，我理解他们第一次求助，羞于启齿不敢告诉家里人。我不是不能理解群友们的心情，或者自身的悲惨经历。但是对我而言，我真的一时间难以接受这么多负面倾诉。我不是心理咨询师，我对心理学的掌握也有限，其实说是在，我自己也是个病人，我是个双相情感障碍患者，我也是第一次面对这种情况。每次遇到这种情况，我总是想着怎么逃避现实，仿佛精神分裂般，总是觉得事情没有发生，一切都是梦境罢了。我也希望是这样，但是发生的事情终归是发生了，我不可能凭主观意识去改变。\r\n" +
@@ -283,78 +283,28 @@ namespace Net_2kBot
                 }
                 // 叫人
                 // 引入模块
+                var Call = new Call();
                 if (x.MessageChain.GetPlainMessage().StartsWith("/call"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;//正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
-                    switch (text.Length)
+                    if (global.ignores.Contains(x.Sender.Id) == false)
                     {
-                        case 3:
-                            try
-                            {
-                                if (text[2].ToInt32() >= 1)
-                                {
-                                    Call.Execute(text[1], x.GroupId, text[2].ToInt32());
-                                }
-                                else if (text[2].ToInt32() < 1)
-                                {
-                                    try
-                                    {
-                                        await MessageManager.SendGroupMessageAsync(x.GroupId, "nmd，这个数字是几个意思？");
-                                    }
-                                    catch
-                                    {
-                                        Console.WriteLine("群消息发送失败");
-                                    }
-                                }
-                            }
-                            catch
-                            {
+                        switch (text.Length)
+                        {
+                            case 3:
                                 try
                                 {
-                                    await MessageManager.SendGroupMessageAsync(x.GroupId, "油饼食不食？");
-                                }
-                                catch
-                                {
-                                    Console.WriteLine("群消息发送失败");
-                                }
-                            }
-                            break;
-                        case 2:
-                            try
-                            {
-                                Console.WriteLine(ja.Count);
-                                if (ja.Count == 4)
-                                {
-                                    string target = ja[2]["target"]!.ToString();
-                                    string t = ja[3]["text"]!.ToString().Replace(" ", "");
-                                    int time = t.ToInt32();
-                                    try
+                                    if (text[2].ToInt32() >= 1)
                                     {
-                                        Console.WriteLine(time);
-                                        Console.WriteLine(target);
-                                        if (time >= 1)
-                                        {
-                                            Call.Execute(target, x.GroupId, time);
-                                        }
-                                        else
-                                        {
-                                            try
-                                            {
-                                                await MessageManager.SendGroupMessageAsync(x.GroupId, "nmd，这个数字是几个意思？");
-                                            }
-                                            catch
-                                            {
-                                                Console.WriteLine("群消息发送失败");
-                                            }
-                                        }
+                                        Call.Execute(text[1], x.GroupId, text[2].ToInt32());
                                     }
-                                    catch
+                                    else if (text[2].ToInt32() < 1)
                                     {
                                         try
                                         {
-                                            await MessageManager.SendGroupMessageAsync(x.GroupId, "油饼食不食？");
+                                            await MessageManager.SendGroupMessageAsync(x.GroupId, "nmd，这个数字是几个意思？");
                                         }
                                         catch
                                         {
@@ -362,41 +312,95 @@ namespace Net_2kBot
                                         }
                                     }
                                 }
-                                else if (ja.Count == 3)
+                                catch
                                 {
-                                    string target = ja[2]["target"]!.ToString();
-                                    Call.Execute(target, x.GroupId, 3);
+                                    try
+                                    {
+                                        await MessageManager.SendGroupMessageAsync(x.GroupId, "油饼食不食？");
+                                    }
+                                    catch
+                                    {
+                                        Console.WriteLine("群消息发送失败");
+                                    }
                                 }
-                                else
+                                break;
+                            case 2:
+                                try
                                 {
-                                    Call.Execute(text[1], x.GroupId, 3);
+                                    Console.WriteLine(ja.Count);
+                                    if (ja.Count == 4)
+                                    {
+                                        string target = ja[2]["target"]!.ToString();
+                                        string t = ja[3]["text"]!.ToString().Replace(" ", "");
+                                        int time = t.ToInt32();
+                                        try
+                                        {
+                                            Console.WriteLine(time);
+                                            Console.WriteLine(target);
+                                            if (time >= 1)
+                                            {
+                                                Call.Execute(target, x.GroupId, time);
+                                            }
+                                            else
+                                            {
+                                                try
+                                                {
+                                                    await MessageManager.SendGroupMessageAsync(x.GroupId, "nmd，这个数字是几个意思？");
+                                                }
+                                                catch
+                                                {
+                                                    Console.WriteLine("群消息发送失败");
+                                                }
+                                            }
+                                        }
+                                        catch
+                                        {
+                                            try
+                                            {
+                                                await MessageManager.SendGroupMessageAsync(x.GroupId, "油饼食不食？");
+                                            }
+                                            catch
+                                            {
+                                                Console.WriteLine("群消息发送失败");
+                                            }
+                                        }
+                                    }
+                                    else if (ja.Count == 3)
+                                    {
+                                        string target = ja[2]["target"]!.ToString();
+                                        Call.Execute(target, x.GroupId, 3);
+                                    }
+                                    else
+                                    {
+                                        Call.Execute(text[1], x.GroupId, 3);
+                                    }
                                 }
-                            }
-                            catch
-                            {
-                                Console.WriteLine("群消息发送失败");
-                            }
-                            break;
-                        case < 2:
-                            try
-                            {
-                                await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
-                            }
-                            catch
-                            {
-                                Console.WriteLine("群消息发送失败");
-                            }
-                            break;
-                        default:
-                            try
-                            {
-                                await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
-                            }
-                            catch
-                            {
-                                Console.WriteLine("群消息发送失败");
-                            }
-                            break;
+                                catch
+                                {
+                                    Console.WriteLine("群消息发送失败");
+                                }
+                                break;
+                            case < 2:
+                                try
+                                {
+                                    await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("群消息发送失败");
+                                }
+                                break;
+                            default:
+                                try
+                                {
+                                    await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("群消息发送失败");
+                                }
+                                break;
+                        }
                     }
                 }
                 // 鸣谢
@@ -423,7 +427,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage().StartsWith("/mute"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  //正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length != 1)
                     {
@@ -485,7 +489,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage().StartsWith("/unmute"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  //正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length == 2)
                     {
@@ -515,7 +519,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage().StartsWith("/kick"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  //正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length == 2)
                     {
@@ -545,7 +549,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage().StartsWith("/block"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  //正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length == 2)
                     {
@@ -565,17 +569,14 @@ namespace Net_2kBot
                         {
                             await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
                         }
-                        catch
-                        {
-                            Console.WriteLine("群消息发送失败");
-                        }
+                        catch { }
                     }
                 }
                 // 解黑
                 if (x.MessageChain.GetPlainMessage().StartsWith("/unblock"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  //正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length == 2)
                     {
@@ -605,7 +606,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage().StartsWith("/op"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;//正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length == 2)
                     {
@@ -625,17 +626,14 @@ namespace Net_2kBot
                         {
                             await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
                         }
-                        catch
-                        {
-                            Console.WriteLine("群消息发送失败");
-                        }
+                        catch { }
                     }
                 }
-                // 夺走机器人管理员
+                // 剥夺机器人管理员
                 if (x.MessageChain.GetPlainMessage().StartsWith("/deop"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
-                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  // 正常获取jobject
+                    JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;  //正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
                     if (text.Length == 2)
                     {
@@ -661,13 +659,18 @@ namespace Net_2kBot
                         }
                     }
                 }
+                // 同步黑名单
+                if (x.MessageChain.GetPlainMessage().StartsWith("/sync"))
+                {
+                    Syncs.Sync(x);
+                }
                 // 版本
                 if (x.MessageChain.GetPlainMessage() == "版本")
                 {
                     try
                     {
                         await MessageManager.SendGroupMessageAsync(x.GroupId,
-                        "机器人版本：b1.0.4\r\n上次更新日期：2022/7/2\r\n更新内容：什么都没有更新（");
+                        "机器人版本：b1.0.6\r\n上次更新日期：2022/7/31\r\n更新内容：做了些许修改以同步PR，同时加入了/sync指令");
                     }
                     catch
                     {
@@ -675,26 +678,8 @@ namespace Net_2kBot
                     }
                 }
             });
-            // 人机交流
-            bot.MessageReceived
-            .OfType<FriendMessageReceiver>()
-            .Subscribe(x =>
-            {
-                if (x.FriendId == "2548452533")
-                {
-                    Cli.Execute(x);
-                }
-            });
-            // code
-
-    // 然后在这之后卡住主线程（也可以使用别的方式，文档假设阅读者是个C#初学者）
-            while (true)
-            {
-                if (Console.ReadLine()!.ToLower() == "exit")
-                {
-                    return;
-                }
-            }
+            // 然后在这之后卡住主线程（也可以使用别的方式，文档假设阅读者是个C#初学者）
+            Console.ReadLine();
         }
     }
 }
