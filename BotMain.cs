@@ -660,9 +660,19 @@ namespace Net_2kBot
                     }
                 }
                 // 同步黑名单
-                if (x.MessageChain.GetPlainMessage().StartsWith("/sync"))
+                if (x.MessageChain.GetPlainMessage() == ("/sync"))
                 {
-                    Syncs.Sync(x);
+                    Syncs.Sync(x,x.GroupId,x.Sender.Id);
+                }
+                // 反向同步黑名单
+                if (x.MessageChain.GetPlainMessage() == ("/rsync"))
+                {
+                    Syncs.Rsync(x, x.GroupId, x.Sender.Id);
+                }
+                // 合并黑名单并双向同步
+                if (x.MessageChain.GetPlainMessage() == ("/merge"))
+                {
+                    Syncs.Merge(x, x.GroupId, x.Sender.Id);
                 }
                 // 版本
                 if (x.MessageChain.GetPlainMessage() == "版本")
@@ -670,7 +680,7 @@ namespace Net_2kBot
                     try
                     {
                         await MessageManager.SendGroupMessageAsync(x.GroupId,
-                        "机器人版本：b1.0.6\r\n上次更新日期：2022/7/31\r\n更新内容：做了些许修改以同步PR，同时加入了/sync指令");
+                        "机器人版本：b1.0.7\r\n上次更新日期：2022/7/31\r\n更新内容：添加了/rsync和/merge指令");
                     }
                     catch
                     {
