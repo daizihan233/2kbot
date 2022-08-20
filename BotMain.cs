@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Reactive.Linq;
 
+
 namespace Net_2kBot
 {
     public static class BotMain
@@ -22,8 +23,8 @@ namespace Net_2kBot
             MiraiBot bot = new()
             {
                 Address = "localhost:8080",
-                QQ = global.qq,
-                VerifyKey = global.verify_key
+                QQ = Global.Qq,
+                VerifyKey = Global.VerifyKey
             };
             // 注意: `LaunchAsync`是一个异步方法，请确保`Main`方法的返回值为`Task`
             await bot.LaunchAsync();
@@ -38,8 +39,8 @@ namespace Net_2kBot
             .OfType<GroupMessageReceiver>()
             .Subscribe(_ =>
             {
-                global.ops = System.IO.File.ReadAllLines("ops.txt");
-                global.blocklist = System.IO.File.ReadAllLines("blocklist.txt");
+                Global.Ops = System.IO.File.ReadAllLines("ops.txt");
+                Global.Blocklist = System.IO.File.ReadAllLines("blocklist.txt");
                 Thread.Sleep(500);
             });
             // 戳一戳效果
@@ -104,7 +105,7 @@ namespace Net_2kBot
            .OfType<GroupMessageRecalledEvent>()
            .Subscribe(async receiver =>
            {
-               var messageChain = new MessageChainBuilder()
+               MessageChain? messageChain = new MessageChainBuilder()
                 .At(receiver.Operator.Id)
                 .Plain(" 你又撤回了什么见不得人的东西？")
                 .Build();
@@ -179,7 +180,7 @@ namespace Net_2kBot
                 {
                     Console.WriteLine("群消息发送失败");
                 }
-                if (global.blocklist != null && global.blocklist.Contains(receiver.Member.Group.Id))
+                if (Global.Blocklist != null && Global.Blocklist.Contains(receiver.Member.Group.Id))
                 {
                     try
                     {
@@ -217,7 +218,7 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage() == "/surprise")
                 {
                     MessageChain? chain = new MessageChainBuilder()
-                         .VoiceFromPath(global.path + "/ysxb.slk")
+                         .VoiceFromPath(Global.Path + "/ysxb.slk")
                          .Build();
                     try
                     {
@@ -232,17 +233,9 @@ namespace Net_2kBot
                 if (x.MessageChain.GetPlainMessage() == "/rphoto")
                 {
                     Random r = new();
-                    string url;
-                    int chance = 3;
+                    const int chance = 3;
                     int choice = r.Next(chance);
-                    if (choice == chance - 1)
-                    {
-                        url = "https://www.dmoe.cc/random.php";
-                    }
-                    else
-                    {
-                        url = "https://source.unsplash.com/random";
-                    }
+                    string url = choice == chance - 1 ? "https://www.dmoe.cc/random.php" : "https://source.unsplash.com/random";
                     MessageChain? chain = new MessageChainBuilder()
                          .ImageFromUrl(url)
                          .Build();
@@ -283,13 +276,12 @@ namespace Net_2kBot
                 }
                 // 叫人
                 // 引入模块
-                var Call = new Call();
                 if (x.MessageChain.GetPlainMessage().StartsWith("/call"))
                 {
                     string result1 = x.MessageChain.ToJsonString();
                     JArray ja = (JArray)JsonConvert.DeserializeObject(result1)!;//正常获取jobject
                     string[] text = ja[1]["text"]!.ToString().Split(" ");
-                    if (global.ignores.Contains(x.Sender.Id) == false)
+                    if (Global.Ignores.Contains(x.Sender.Id) == false)
                     {
                         switch (text.Length)
                         {
@@ -569,7 +561,10 @@ namespace Net_2kBot
                         {
                             await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
                         }
-                        catch { }
+                        catch
+                        {
+                            Console.WriteLine("缺少参数");
+                        }
                     }
                 }
                 // 解黑
@@ -626,7 +621,10 @@ namespace Net_2kBot
                         {
                             await MessageManager.SendGroupMessageAsync(x.GroupId, "缺少参数");
                         }
-                        catch { }
+                        catch
+                        {
+                            Console.WriteLine("缺少参数");
+                        }
                     }
                 }
                 // 剥夺机器人管理员
@@ -640,11 +638,11 @@ namespace Net_2kBot
                         if (ja.Count == 3)
                         {
                             string target = ja[2]["target"]!.ToString();
-                            admin.Deop(x.Sender.Id, target, x.GroupId);
+                            Admin.Deop(x.Sender.Id, target, x.GroupId);
                         }
                         else
                         {
-                            admin.Deop(x.Sender.Id, text[1], x.GroupId);
+                            Admin.Deop(x.Sender.Id, text[1], x.GroupId);
                         }
                     }
                     else

@@ -9,39 +9,35 @@ namespace Net_2kBot.modules
     {
         public static async void Execute(MessageReceiverBase @base)
         {
-            if (@base is FriendMessageReceiver receiver)
+            if (@base is not FriendMessageReceiver receiver) return;
+            if (!receiver.MessageChain.GetPlainMessage().ToLower().StartsWith("/send")) return;
+            string[] text = receiver.MessageChain.GetPlainMessage().Split(" ");
+            if (text.Length >= 3)
             {
-                if (receiver.MessageChain.GetPlainMessage().ToLower().StartsWith("/send"))
+                string results = "";
+                for (int i = 2; i < text.Length; i++)
                 {
-                    string[] text = receiver.MessageChain.GetPlainMessage().Split(" ");
-                    if (text.Length >= 3)
+                    if (i == 2)
                     {
-                        string results = "";
-                        for (int i = 2; i < text.Length; i++)
-                        {
-                            if (i == 2)
-                            {
-                                results = text[i];
-                            }
-                            else
-                            {
-                                results = results + " " + text[i];
-                            }
-                        }
-                        try
-                        {
-                            await MessageManager.SendGroupMessageAsync(text[1], results);
-                        }
-                        catch
-                        {
-                            Console.WriteLine("群消息发送失败");
-                        }
+                        results = text[i];
                     }
                     else
                     {
-                        await receiver.SendMessageAsync("参数缺少");
+                        results = results + " " + text[i];
                     }
                 }
+                try
+                {
+                    await MessageManager.SendGroupMessageAsync(text[1], results);
+                }
+                catch
+                {
+                    Console.WriteLine("群消息发送失败");
+                }
+            }
+            else
+            {
+                await receiver.SendMessageAsync("参数缺少");
             }
         }
     }

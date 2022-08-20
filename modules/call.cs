@@ -1,9 +1,10 @@
-﻿using Mirai.Net.Sessions.Http.Managers;
+﻿using Mirai.Net.Data.Messages;
+using Mirai.Net.Sessions.Http.Managers;
 using Mirai.Net.Utils.Scaffolds;
 
 namespace Net_2kBot.Modules
 {
-    public class Call
+    public static class Call
     {
         // 叫人功能
         public static async void Execute(string victim, string group, int times)
@@ -12,19 +13,19 @@ namespace Net_2kBot.Modules
             {
                 times = 10;
             }
-            var messageChain = new MessageChainBuilder()
+            MessageChain? messageChain = new MessageChainBuilder()
                                .At(victim)
                                .Plain(" 机器人正在呼叫你")
                                .Build();
-            global.time_now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-            if (global.time_now - global.last_call >= global.cd)
+            Global.TimeNow = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            if (Global.TimeNow - Global.LastCall >= Global.Cd)
             {
                 for (int i = 0; i < times; i++)
                 {
                     try
                     {
                         await MessageManager.SendGroupMessageAsync(group, messageChain);
-                        global.last_call = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                        Global.LastCall = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                     }
                     catch
                     {
@@ -34,10 +35,10 @@ namespace Net_2kBot.Modules
             }
             else
             {
-                global.time_now = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+                Global.TimeNow = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
                 try
                 {
-                    await MessageManager.SendGroupMessageAsync(group, "CD未到，请别急！CD还剩： " + (global.cd - (global.time_now - global.last_call)).ToString() + " 秒");
+                    await MessageManager.SendGroupMessageAsync(group, "CD未到，请别急！CD还剩： " + (Global.Cd - (Global.TimeNow - Global.LastCall)).ToString() + " 秒");
                 }
                 catch
                 {

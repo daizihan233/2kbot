@@ -24,57 +24,44 @@ namespace Net_2kBot.Modules
                     "额",
                     "呃"
                 };
-            if (@base is GroupMessageReceiver receiver)
+            if (@base is not GroupMessageReceiver receiver) return;
+            // 复读机
+            if (receiver.MessageChain.GetPlainMessage().StartsWith("/echo"))
             {
-                // 复读机
-                if (receiver.MessageChain.GetPlainMessage().StartsWith("/echo"))
+                string[] result = receiver.MessageChain.GetPlainMessage().Split(" ");
+                if (result.Length > 1)
                 {
-                    string[] result = receiver.MessageChain.GetPlainMessage().Split(" ");
-                    if (result.Length > 1)
+                    try
                     {
-                        try
+                        string results = "";
+                        if (Global.Ignores.Contains(receiver.Sender.Id) == false)
                         {
-                            string results = "";
-                            if (global.ignores.Contains(receiver.Sender.Id) == false)
+                            for (int i = 1; i < result.Length; i++)
                             {
-                                for (int i = 1; i < result.Length; i++)
+                                if (i == 1)
                                 {
-                                    if (i == 1)
-                                    {
-                                        results = result[i];
-                                    }
-                                    else
-                                    {
-                                        results = results + " " + result[i];
-                                    }
+                                    results = result[i];
+                                }
+                                else
+                                {
+                                    results = results + " " + result[i];
                                 }
                             }
-                            try
-                            {
-                                await receiver.SendMessageAsync(results);
-                            }
-                            catch
-                            {
-                                Console.WriteLine("群消息发送失败");
-                            }
+                        }
+                        try
+                        {
+                            await receiver.SendMessageAsync(results);
                         }
                         catch
                         {
-                            try
-                            {
-                                await receiver.SendMessageAsync("油饼食不食？");
-                            }
-                            catch
-                            {
-                                Console.WriteLine("群消息发送失败");
-                            }
+                            Console.WriteLine("群消息发送失败");
                         }
                     }
-                    else
+                    catch
                     {
                         try
                         {
-                            await receiver.SendMessageAsync("你个sb难道没发觉到少了些什么？");
+                            await receiver.SendMessageAsync("油饼食不食？");
                         }
                         catch
                         {
@@ -82,22 +69,31 @@ namespace Net_2kBot.Modules
                         }
                     }
                 }
-                // 主动复读
-                else if (global.ignores.Contains(receiver.Sender.Id) == false)
+                else
                 {
-                    foreach (string item in repeatwords)
+                    try
                     {
-                        if (item.Equals(receiver.MessageChain.GetPlainMessage()))
-                        {
-                            try
-                            {
-                                await receiver.SendMessageAsync(receiver.MessageChain.GetPlainMessage());
-                            }
-                            catch
-                            {
-                                break;
-                            }
-                        }
+                        await receiver.SendMessageAsync("你个sb难道没发觉到少了些什么？");
+                    }
+                    catch
+                    {
+                        Console.WriteLine("群消息发送失败");
+                    }
+                }
+            }
+            // 主动复读
+            else if (Global.Ignores.Contains(receiver.Sender.Id) == false)
+            {
+                foreach (string item in repeatwords)
+                {
+                    if (!item.Equals(receiver.MessageChain.GetPlainMessage())) continue;
+                    try
+                    {
+                        await receiver.SendMessageAsync(receiver.MessageChain.GetPlainMessage());
+                    }
+                    catch
+                    {
+                        break;
                     }
                 }
             }

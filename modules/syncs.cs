@@ -4,7 +4,6 @@ using Newtonsoft.Json.Linq;
 using Mirai.Net.Sessions.Http.Managers;
 using Mirai.Net.Data.Messages;
 using Mirai.Net.Data.Messages.Receivers;
-using System.Linq;
 
 namespace Net_2kBot.Modules
 {
@@ -13,96 +12,94 @@ namespace Net_2kBot.Modules
         // 从Hanbot同步黑名单
         public static async void Sync(MessageReceiverBase @base, string group, string executor)
         {
-            if (@base is GroupMessageReceiver receiver)
+            if (@base is not GroupMessageReceiver receiver) return;
+            if (Global.Ops != null && Global.Ops.Contains(executor))
             {
-                if (global.ops != null && global.ops.Contains(executor))
+                RestClient client = new("http://101.42.94.97/blacklist");
+                RestRequest request = new("look")
                 {
-                    RestClient client = new("http://101.42.94.97/blacklist");
-                    RestRequest request = new("look", Method.Get);
-                    request.Timeout = 10000;
-                    RestResponse response = await client.ExecuteAsync(request);
-                    JObject jo = (JObject)JsonConvert.DeserializeObject(response.Content!)!;  //正常获取jobject
-                    File.WriteAllText("blocklist.txt", String.Empty);
-                    using StreamWriter file = new("blocklist.txt", append: true);
-                    foreach (string? s in jo["data"]!)
-                    {
-                        await file.WriteLineAsync(s);
-                    }
-                    file.Close();
-                    try
-                    {
-                        await MessageManager.SendGroupMessageAsync(receiver.GroupId, "从Hanbot同步黑名单成功！");
-                    }
-                    catch
-                    {
-                        Console.WriteLine("群消息发送失败");
-                    }
-                }
-                else
+                    Timeout = 10000
+                };
+                RestResponse response = await client.ExecuteAsync(request);
+                JObject jo = (JObject)JsonConvert.DeserializeObject(response.Content!)!;  //正常获取jobject
+                await File.WriteAllTextAsync("blocklist.txt", String.Empty);
+                await using StreamWriter file = new("blocklist.txt", append: true);
+                foreach (string? s in jo["data"]!)
                 {
-                    try
-                    {
-                        await MessageManager.SendGroupMessageAsync(group, "你不是机器人管理员");
-                    }
-                    catch
-                    {
-                        Console.WriteLine("群消息发送失败");
-                    }
+                    await file.WriteLineAsync(s);
                 }
-            }     
+                file.Close();
+                try
+                {
+                    await MessageManager.SendGroupMessageAsync(receiver.GroupId, "从Hanbot同步黑名单成功！");
+                }
+                catch
+                {
+                    Console.WriteLine("群消息发送失败");
+                }
+            }
+            else
+            {
+                try
+                {
+                    await MessageManager.SendGroupMessageAsync(group, "你不是机器人管理员");
+                }
+                catch
+                {
+                    Console.WriteLine("群消息发送失败");
+                }
+            }
         }
         // 将黑名单反向同步到Hanbot
         public static async void Rsync(MessageReceiverBase @base, string group, string executor)
         {
             if (@base is GroupMessageReceiver receiver)
             {
-                if (global.ops != null && global.ops.Contains(executor))
+                if (Global.Ops != null && Global.Ops.Contains(executor))
                 {
                     RestClient client = new("http://101.42.94.97/blacklist");
-                    RestRequest request = new("look", Method.Get);
-                    request.Timeout = 10000;
+                    RestRequest request = new("look")
+                    {
+                        Timeout = 10000
+                    };
                     RestResponse response = await client.ExecuteAsync(request);
                     JObject jo = (JObject)JsonConvert.DeserializeObject(response.Content!)!;  //正常获取jobject
-                    List<string> blocklist2 = new List<string> {""};
-                    if (global.blocklist != null)
+                    var blocklist2 = new List<string> {""};
+                    if (Global.Blocklist == null) return;
+                    foreach (string t in Global.Blocklist)
                     {
-                        for (int i = 0; i < global.blocklist.Length; i++)
+                        if (jo["data"]!.Contains(t)) continue;
+                        RestClient client1 = new("http://101.42.94.97/blacklist");
+                        RestRequest request1 = new("up?uid=" + t + "&key=" + Global.ApiKey, Method.Post);
+                        request.Timeout = 10000;
+                        await client1.ExecuteAsync(request1);
+                    }
+                    foreach (string? s in jo["data"]!)
+                    {
+                        if (s != null)
                         {
-                            if (!jo["data"]!.Contains(global.blocklist[i]))
-                            {
-                                RestClient client1 = new("http://101.42.94.97/blacklist");
-                                RestRequest request1 = new("up?uid=" + global.blocklist[i] + "&key=" + global.api_key, Method.Post);
-                                request.Timeout = 10000;
-                                await client1.ExecuteAsync(request1);
-                            }
+                            blocklist2.Add(s);
                         }
-                        foreach (string? s in jo["data"]!)
-                        {
-                            if (s != null)
-                            {
-                                blocklist2.Add(s);
-                            }
-                        }
-                        blocklist2.Remove("");
-                        var diff = new HashSet<string>(global.blocklist);
-                        diff.SymmetricExceptWith(blocklist2);
-                        string diff1 = String.Join(", ", diff);
-                        string[] diff2 = diff1.Split(",");
-                        foreach (string s in diff2)
-                        {
-                            RestClient client2 = new("http://101.42.94.97/blacklist");
-                            RestRequest request2 = new("del?uid=" + s + "&key=" + global.api_key, Method.Delete);
-                            request.Timeout = 10000;
-                            await client2.ExecuteAsync(request2);
-                        }
-                        try
-                        {
-                            await MessageManager.SendGroupMessageAsync(receiver.GroupId, "将黑名单反向同步给Hanbot成功！");
-                        }
-                        catch
-                        {
-                            Console.WriteLine("群消息发送失败");
-                        }
+                    }
+                    blocklist2.Remove("");
+                    var diff = new HashSet<string>(Global.Blocklist);
+                    diff.SymmetricExceptWith(blocklist2);
+                    string diff1 = String.Join(", ", diff);
+                    string[] diff2 = diff1.Split(",");
+                    foreach (string s in diff2)
+                    {
+                        RestClient client2 = new("http://101.42.94.97/blacklist");
+                        RestRequest request2 = new("del?uid=" + s + "&key=" + Global.ApiKey, Method.Delete);
+                        request.Timeout = 10000;
+                        await client2.ExecuteAsync(request2);
+                    }
+                    try
+                    {
+                        await MessageManager.SendGroupMessageAsync(receiver.GroupId, "将黑名单反向同步给Hanbot成功！");
+                    }
+                    catch
+                    {
+                        Console.WriteLine("群消息发送失败");
                     }
                 }
                 else
@@ -123,16 +120,18 @@ namespace Net_2kBot.Modules
         {
             if (@base is GroupMessageReceiver receiver)
             {
-                if (global.ops != null && global.ops.Contains(executor))
+                if (Global.Ops != null && Global.Ops.Contains(executor))
                 {
                     RestClient client = new("http://101.42.94.97/blacklist");
-                    RestRequest request = new("look", Method.Get);
-                    request.Timeout = 10000;
+                    RestRequest request = new("look")
+                    {
+                        Timeout = 10000
+                    };
                     RestResponse response = await client.ExecuteAsync(request);
                     JObject jo = (JObject)JsonConvert.DeserializeObject(response.Content!)!;  //正常获取jobject
-                    using StreamWriter file = new("blocklist.txt", append: true);
-                    List<string> blocklist2 = new List<string> {""};
-                    if (global.blocklist != null)
+                    await using StreamWriter file = new("blocklist.txt", append: true);
+                    var blocklist2 = new List<string> {""};
+                    if (Global.Blocklist != null)
                     {
                         foreach (string? s in jo["data"]!)
                         {
@@ -142,7 +141,7 @@ namespace Net_2kBot.Modules
                             }
                         }
                         blocklist2.Remove("");
-                        var diff = new HashSet<string>(global.blocklist);
+                        var diff = new HashSet<string>(Global.Blocklist);
                         diff.SymmetricExceptWith(blocklist2);
                         string diff1 = String.Join(", ", diff);
                         string[] diff2 = diff1.Split(",");
@@ -151,11 +150,11 @@ namespace Net_2kBot.Modules
                             if (!jo["data"]!.Contains(s))
                             {
                                 RestClient client1 = new("http://101.42.94.97/blacklist");
-                                RestRequest request1 = new("up?uid=" + s + "&key=" + global.api_key, Method.Post);
+                                RestRequest request1 = new("up?uid=" + s + "&key=" + Global.ApiKey, Method.Post);
                                 request.Timeout = 10000;
                                 await client1.ExecuteAsync(request1);
                             }
-                            else if (!global.blocklist.Contains(s))
+                            else if (!Global.Blocklist.Contains(s))
                             {
                                 await file.WriteLineAsync(s);
                             }
